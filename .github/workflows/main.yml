@@ -1,0 +1,28 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SECRET_KEY }}
+
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@18.220.142.77 << 'EOF'
+            cd ~/your-app-folder || git clone https://github.com/JesonNehru/app1.git ~/app1-folder && cd ~/app1-folder
+            git pull origin main
+            docker build -t app1-image .
+            docker rm -f app1-container || true
+            docker run -d -p 3000:3000 --name app1-container app1-image
+          EOF
